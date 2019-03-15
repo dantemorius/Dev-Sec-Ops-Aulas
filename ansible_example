@@ -1,0 +1,57 @@
+---
+- name: Rei de Atlantis
+  hosts: all
+  vars: 
+    - username: devsecops
+    - nome: wordpress
+    - server: 127.0.0.1
+    - usuario: wpuser
+    - senha: 4linux
+  tasks:
+  - name: Whoami
+    command: whoami
+    register: resultado
+  - name: Mostrando o Resultado
+    debug:
+      var: resultado.rc
+
+  - name: Instalando Pacotes - UBUNTU
+    apt:
+      name: ['cowsay','sl','fish']
+      update_cache: yes
+      state: present
+    when: ansible_distribution == "Ubuntu"
+
+  - name: Epel-Release
+    package:
+      name: epel-release
+      state: present
+    when: ansible_distribution == "CentOS"
+
+  - name: Instalando Pacotes - CentOS
+    yum:
+      name: ['cowsay','fish','sl']
+      state: present
+    when: ansible_os_family == "RedHat"
+
+  - name: Garantir o PATH
+    blockinfile:
+      path: /etc/profile
+      state: present
+      block: |
+        export PATH=$PATH:/usr/games
+
+  - name: Utilizando Variavel Global
+    lineinfile:
+      path: /root/teste
+      create: yes
+      line: "{{ query('env','SHELL') }}"
+      state: present
+  
+  - name: Criando usuario
+    user: name={{ usuario }} shell=/usr/bin/fish create_home=yes
+  
+  - name: Enviar Arquivo com variaveis
+    template:
+        src: /root/mera
+        dest: /tmp/aqualad
