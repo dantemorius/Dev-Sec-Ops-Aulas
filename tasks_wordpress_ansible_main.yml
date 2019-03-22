@@ -1,0 +1,67 @@
+---
+# tasks file for wordpress
+- name: Garantindo o EPEL
+  yum:
+    name: epel-release
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Instalando Apache + PHP
+  package:
+    name: ['php','php-gd','php-mysql','httpd','python-pip']
+    state: present
+  when: ansible_os_family == "RedHat"
+ 
+- name: Garantindo Modulo PyMySQL
+  pip:
+    name: PyMySQL
+
+- name: Instalando Banco de Dados
+  package: 
+    name: ['mariadb','mariadb-server']
+    state: present
+  when: ansible_os_family == "RedHat"
+
+- name: Iniciando o Banco 
+  service:
+    name: mariadb
+    state: restarted
+
+- name: Criando a Database - Wordpress
+  mysql_db:
+    name: wordpress
+    state: present
+
+- name: Criando Usuário no Banco
+  mysql_user:
+    name: wordpress
+    password: "{{ pass_db }}"
+    priv: '*.*:ALL,GRANT'
+    state: present 
+
+- name: Baixando o Wordpress
+  get_url:
+    url: https://br.wordpress.org/latest-pt_BR.tar.gz
+    dest: /tmp/wordpress.tar.gz
+
+- name: Descompactando Wordpress
+  unarchive:
+    src: /tmp/wordpress.tar.gz
+    dest: /var/www/html
+    remote_src: yes
+
+- name: Alterando Arquivo WP-Admin
+  template:
+    src: wp-config.php
+    dest: /var/www/html/wordpress/
+  notify: apache
+
+
+
+PLAYBOOK WORDPRESS.YML
+---
+- name: Role Wordpress
+  hosts: docker
+  roles:
+    - wordpress
+
